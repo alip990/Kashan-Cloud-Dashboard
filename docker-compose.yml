@@ -93,10 +93,10 @@ services:
     image: redis:latest
 
   nginx:
-    image: nginx:latest
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     container_name: nginx-container
-    volumes:
-      - ./nginx/:/etc/nginx/conf.d/
     ports:
       - "80:80"
     depends_on:
