@@ -30,7 +30,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    entrypoint: -./backend/entrypoint.sh
+    entrypoint: ./entrypoint.sh
     environment:
       DEBUG_MODE: ${DEBUG_MODE}
       POSTGRES_DB: ${POSTGRES_DB}
