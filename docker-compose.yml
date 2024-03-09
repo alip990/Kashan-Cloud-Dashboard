@@ -4,7 +4,6 @@ services:
   frontend-app:
     build:
       context: ./frontend
-      network: host
     container_name: frontend-app
     environment:
       API_URL1: ${API_URL1}
@@ -29,7 +28,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      network: host
     ports:
       - "8000:8000"
     environment:
@@ -57,7 +55,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      network: host
     command: celery -A dashboard.celery beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
       - db
