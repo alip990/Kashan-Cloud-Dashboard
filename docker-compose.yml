@@ -2,38 +2,54 @@ version: "3"
 
 services:
   frontend-app:
-    build: ./frontend
+    build:
+      context: ./frontend
+      network: host
     container_name: frontend-app
     environment:
-      - API_URL=192.168.100.4:8000
-    # restart: unless-stopped
+      API_URL1: ${API_URL1}
+      API_URL: ${API_URL}
+      HOST_BASE_URL: ${HOST_BASE_URL}
     ports:
       - 3000:3000
 
   db:
     image: postgres:14
     environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_NAME=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_PORT=5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
     ports:
       - "5434:5432"
     volumes:
       - "data:/var/lib/postgresql/data"
 
   backend:
-    env_file:
-      - ./backend/.env
-    entrypoint: ./entrypoint.sh
     build:
       context: ./backend
       dockerfile: Dockerfile
+      network: host
     ports:
       - "8000:8000"
-    # volumes:
-    #   - ./backend:/home/application
+    environment:
+      DEBUG_MODE: ${DEBUG_MODE}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      OPENSTACK_URL: ${OPENSTACK_URL}
+      OPENSTACK_ADMIN_PASSWORD: ${OPENSTACK_ADMIN_PASSWORD}
+      OPENSTACK_ADMIN_USERNAME: ${OPENSTACK_ADMIN_USERNAME}
+      OPENSTACK_SSL_CERT_FILE: ${OPENSTACK_SSL_CERT_FILE}
+      HOST_BASE_URL: ${HOST_BASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_HOST: ${REDIS_HOST}
+      BASE_URL: ${BASE_URL}
     depends_on:
       - db
 
@@ -41,30 +57,42 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    env_file:
-      - ./backend/.env
+      network: host
+    command: celery -A dashboard.celery beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
       - db
-    command: celery -A dashboard.celery beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    # volumes:
-    #   - .:/home/application
+    environment:
+      DEBUG_MODE: ${DEBUG_MODE}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      OPENSTACK_URL: ${OPENSTACK_URL}
+      OPENSTACK_ADMIN_PASSWORD: ${OPENSTACK_ADMIN_PASSWORD}
+      OPENSTACK_ADMIN_USERNAME: ${OPENSTACK_ADMIN_USERNAME}
+      OPENSTACK_SSL_CERT_FILE: ${OPENSTACK_SSL_CERT_FILE}
+      HOST_BASE_URL: ${HOST_BASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_HOST: ${REDIS_HOST}
+      BASE_URL: ${BASE_URL}
 
   swagger-ui:
     image: swaggerapi/swagger-ui
     container_name: swagger_ui_container
-    env_file:
-      - ./backend/.env
     ports:
       - "81:8080"
     volumes:
       - ./backend/doc:/usr/share/nginx/html/doc
     environment:
-      API_URL: doc/openapi.yml
-      HOST_BASE_URL: "localhost"
+      API_URL: ${API_URL}
+      HOST_BASE_URL: ${HOST_BASE_URL}
 
   redis:
     image: redis:latest
 
 volumes:
   data:
-    external: true
