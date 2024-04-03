@@ -11,6 +11,8 @@ services:
       HOST_BASE_URL: ${HOST_BASE_URL}
     ports:
       - 3000:3000
+    depends_on:
+      - backend
 
   db:
     image: postgres:14
@@ -23,8 +25,11 @@ services:
       - "5434:5432"
     volumes:
       - "data:/var/lib/postgresql/data"
+    healthcheck:
+      test: pg_isready -U postgres
 
   backend:
+    command: gunicorn hello_django.wsgi:application --bind 0.0.0.0:8000
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -50,7 +55,10 @@ services:
       REDIS_HOST: ${REDIS_HOST}
       BASE_URL: ${BASE_URL}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   backend_celery:
     build:
@@ -58,7 +66,10 @@ services:
       dockerfile: Dockerfile
     command: celery -A dashboard.celery beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       DEBUG_MODE: ${DEBUG_MODE}
       POSTGRES_DB: ${POSTGRES_DB}
@@ -91,6 +102,8 @@ services:
 
   redis:
     image: redis:latest
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
 
   nginx:
     build:
